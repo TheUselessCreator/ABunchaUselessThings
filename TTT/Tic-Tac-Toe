@@ -1,0 +1,328 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe with P-AI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            transition: background-color 0.5s, color 0.5s;
+        }
+        .container {
+            text-align: center;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 0;
+            border: 2px solid black;
+            position: relative;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 48px;
+            font-weight: bold;
+            color: black;
+            background-color: #008080;
+            border: 1px solid black;
+            cursor: pointer;
+            transition: background-color 0.5s, transform 0.5s;
+        }
+        .cell.disabled {
+            pointer-events: none;
+        }
+        .cell.x {
+            color: red;
+            animation: fire 1s infinite;
+        }
+        .cell.o {
+            color: blue;
+            animation: glow 1s infinite;
+        }
+        @keyframes fire {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px blue; }
+            50% { box-shadow: 0 0 20px blue; }
+            100% { box-shadow: 0 0 5px blue; }
+        }
+        .dark-mode {
+            background-color: #333;
+            color: white;
+        }
+        .dark-mode .cell {
+            background-color: #444;
+            border-color: #666;
+        }
+        .toggle-button {
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        .strike {
+            position: absolute;
+            background-color: yellow;
+            height: 5px;
+            width: 0;
+            transition: width 0.5s;
+        }
+        .strike.horizontal {
+            width: 300px;
+        }
+        .strike.vertical {
+            height: 300px;
+            width: 5px;
+        }
+        .strike.diagonal {
+            width: 300px;
+            transform: rotate(45deg);
+        }
+        .strike.diagonal-reverse {
+            width: 300px;
+            transform: rotate(-45deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">TIC-TAC-TOE WITH P-AI</div>
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+            <div class="strike" id="strike"></div>
+        </div>
+        <div class="toggle-button" id="toggleButton">
+            <i class="fas fa-adjust"></i> Toggle Dark/Light Mode
+        </div>
+        <button onclick="resetGame()">Restart Game</button>
+    </div>
+
+    <script>
+        const board = document.getElementById('board');
+        const cells = document.querySelectorAll('.cell');
+        const toggleButton = document.getElementById('toggleButton');
+        const strike = document.getElementById('strike');
+        let currentPlayer = 'X';
+        let gameActive = true;
+        const winningConditions = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+
+        function handleCellClick(event) {
+            const cell = event.target;
+            const index = cell.getAttribute('data-index');
+
+            if (cell.textContent !== '' || !gameActive) {
+                return;
+            }
+
+            cell.textContent = currentPlayer;
+            cell.classList.add('disabled', currentPlayer.toLowerCase());
+
+            if (checkWin()) {
+                displayWin();
+                gameActive = false;
+                return;
+            }
+
+            if (isDraw()) {
+                alert('Draw!');
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+
+            if (currentPlayer === 'O') {
+                setTimeout(aiMove, 500);
+            }
+        }
+
+        function aiMove() {
+            const bestMove = getBestMove();
+            const cell = cells[bestMove];
+            cell.textContent = 'O';
+            cell.classList.add('disabled', 'o');
+
+            if (checkWin()) {
+                displayWin();
+                gameActive = false;
+                return;
+            }
+
+            if (isDraw()) {
+                alert('Draw!');
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = 'X';
+        }
+
+        function getBestMove() {
+            const availableCells = [...cells].map((cell, index) => cell.textContent === '' ? index : null).filter(index => index !== null);
+            let bestScore = -Infinity;
+            let move;
+            for (let i = 0; i < availableCells.length; i++) {
+                const index = availableCells[i];
+                cells[index].textContent = 'O';
+                const score = minimax(cells, 0, false);
+                cells[index].textContent = '';
+                if (score > bestScore) {
+                    bestScore = score;
+                    move = index;
+                }
+            }
+            return move;
+        }
+
+        function minimax(newBoard, depth, isMaximizing) {
+            const scores = {
+                'O': 1,
+                'X': -1,
+                'tie': 0
+            };
+
+            const result = checkWinner();
+            if (result !== null) {
+                return scores[result];
+            }
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < newBoard.length; i++) {
+                    if (newBoard[i].textContent === '') {
+                        newBoard[i].textContent = 'O';
+                        let score = minimax(newBoard, depth + 1, false);
+                        newBoard[i].textContent = '';
+                        bestScore = Math.max(score, bestScore);
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < newBoard.length; i++) {
+                    if (newBoard[i].textContent === '') {
+                        newBoard[i].textContent = 'X';
+                        let score = minimax(newBoard, depth + 1, true);
+                        newBoard[i].textContent = '';
+                        bestScore = Math.min(score, bestScore);
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        function checkWinner() {
+            let winner = null;
+            winningConditions.forEach(condition => {
+                const [a, b, c] = condition;
+                if (cells[a].textContent && cells[a].textContent === cells[b].textContent && cells[a].textContent === cells[c].textContent) {
+                    winner = cells[a].textContent;
+                }
+            });
+
+            if (winner === null && [...cells].every(cell => cell.textContent !== '')) {
+                return 'tie';
+            } else {
+                return winner;
+            }
+        }
+
+        function checkWin() {
+            return winningConditions.some(condition => {
+                if (condition.every(index => cells[index].textContent === currentPlayer)) {
+                    displayStrike(condition);
+                    return true;
+                }
+                return false;
+            });
+        }
+
+        function isDraw() {
+            return [...cells].every(cell => cell.textContent !== '');
+        }
+
+        function displayWin() {
+            setTimeout(() => {
+                alert(`${currentPlayer} wins!`);
+            }, 500);
+        }
+
+        function displayStrike(condition) {
+            const [a, b, c] = condition;
+            const strikeClass = getStrikeClass(a, b, c);
+            strike.classList.add(strikeClass);
+            setTimeout(() => {
+                strike.style.width = '300px';
+            }, 100);
+        }
+
+        function getStrikeClass(a, b, c) {
+            if (a % 3 === 0 && b % 3 === 1 && c % 3 === 2) {
+                return 'horizontal';
+            }
+            if (a < 3 && b < 6 && c < 9) {
+                return 'vertical';
+            }
+            if (a === 0 && c === 8) {
+                return 'diagonal';
+            }
+            if (a === 2 && c === 6) {
+                return 'diagonal-reverse';
+            }
+        }
+
+        function resetGame() {
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('disabled', 'x', 'o');
+            });
+            strike.className = 'strike';
+            strike.style.width = '0';
+            currentPlayer = 'X';
+            gameActive = true;
+        }
+
+        cells.forEach(cell => {
+            cell.addEventListener('click', handleCellClick);
+        });
+
+        toggleButton.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+        });
+    </script>
+</body>
+</html>
