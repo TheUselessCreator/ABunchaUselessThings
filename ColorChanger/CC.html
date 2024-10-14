@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Changer</title>
+    <style>
+        body {
+            background-color: #f0f0f0; /* light theme background */
+            transition: background-color 0.5s ease; /* animation for background change */
+            height: 100vh; /* full height */
+            display: flex; /* center button */
+            justify-content: center; /* center horizontally */
+            align-items: center; /* center vertically */
+            margin: 0; /* remove default margin */
+        }
+
+        #theme-btn {
+            width: 100px; /* button width */
+            height: 100px; /* button height */
+            background-color: #4CAF50; /* green button color */
+            border: none;
+            border-radius: 50%; /* round button */
+            cursor: pointer;
+            transition: transform 0.3s ease; /* animation for scaling */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* shadow effect */
+            position: relative; /* for pseudo-elements */
+        }
+
+        #theme-btn::before {
+            content: ''; /* sun */
+            position: absolute;
+            top: 25%;
+            left: 40%;
+            width: 20px;
+            height: 20px;
+            background-color: #F7DC6F; /* sun color */
+            border-radius: 50%;
+            animation: sun-rotate 3s linear infinite; /* sun rotation animation */
+        }
+
+        #theme-btn::after {
+            content: ''; /* crescent moon */
+            position: absolute;
+            top: 50%;
+            left: 60%;
+            width: 15px;
+            height: 15px;
+            background-color: #F7DC6F; /* crescent moon color */
+            border-radius: 50%;
+            transform: rotate(-45deg); /* initial rotation */
+            animation: moon-rotate 3s linear infinite; /* crescent moon rotation animation */
+        }
+
+        #theme-btn:hover {
+            transform: scale(1.1); /* scale up on hover */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* deeper shadow on hover */
+        }
+
+        .dark-theme {
+            background-color: #333; /* dark theme background */
+            transition: background-color 0.5s ease; /* smooth transition */
+        }
+
+        /* Animations */
+
+        @keyframes sun-rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes moon-rotate {
+            0% {
+                transform: rotate(-45deg);
+            }
+            100% {
+                transform: rotate(315deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="theme-btn"></button>
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+
+        themeBtn.addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme');
+        });
+    </script>
+</body>
+</html>
